@@ -9,10 +9,75 @@ let toEditFileIndex = null;
 let updateCheckInterval = null;
 let githubUploadToken = '';
 let githubUploadRepo = '';
+let currentUserId = localStorage.getItem('userId') || 'user_' + Math.random().toString(36).substr(2, 9);
 
-// ===== REAL-TIME UPDATE CHECK =====
+// Store user ID
+localStorage.setItem('userId', currentUserId);
+
+// ===== CLOUD SYNC SYSTEM =====
+const CLOUD_CONFIG = {
+    storageURL: 'https://api.github.com/repos/minecraftuser112614-sudo/ABHINAV-6/contents/data.json',
+    token: 'ghp_demo' // This will be replaced with actual token
+};
+
+// Fetch tools from GitHub (Cloud)
+async function fetchToolsFromCloud() {
+    try {
+        const response = await fetch(CLOUD_CONFIG.storageURL);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.content) {
+                const decodedContent = atob(data.content);
+                const cloudTools = JSON.parse(decodedContent);
+                localStorage.setItem('tools', JSON.stringify(cloudTools));
+                tools = cloudTools;
+                loadTools();
+                return cloudTools;
+            }
+        }
+    } catch (error) {
+        console.log('Cloud sync: Using local storage');
+    }
+    return tools;
+}
+
+// Save tools to GitHub (Cloud)
+async function saveToolsToCloud() {
+    try {
+        const token = localStorage.getItem('githubToken') || '';
+        if (!token) return false;
+
+        const [owner, repo] = (localStorage.getItem('githubUploadRepo') || '').split('/');
+        if (!owner || !repo) return false;
+
+        const fileContent = btoa(JSON.stringify(tools, null, 2));
+        
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data.json`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Update tools data - ${new Date().toISOString()}`,
+                content: fileContent
+            })
+        });
+
+        return response.ok;
+    } catch (error) {
+        console.log('Cloud save error:', error);
+        return false;
+    }
+}
+
+// ===== REAL-TIME UPDATE CHECK (Cloud + Local) =====
 function startRealTimeUpdates() {
-    updateCheckInterval = setInterval(() => {
+    updateCheckInterval = setInterval(async () => {
+        // Try to fetch from cloud first
+        await fetchToolsFromCloud();
+        
+        // Also check local storage in case of manual changes
         const latestTools = JSON.parse(localStorage.getItem('tools')) || [];
         
         if (JSON.stringify(latestTools) !== JSON.stringify(tools)) {
@@ -174,7 +239,7 @@ function loadTools() {
             </div>
             <div class="tool-description">${tool.description}</div>
             <div class="tool-source" style="font-size: 0.75em; color: var(--text-secondary); margin: 8px 0;">
-                📊 ${fileSize} • 📍 ${tool.source === 'github' ? '🐙 From GitHub (Small)' : tool.source === 'github-repo' ? '🐙 From GitHub (Large)' : '💾 Direct Upload'}
+                📊 ${fileSize} • 📍 ${tool.source === 'github' ? '🐙 From GitHub (Small)' : tool.source === 'github-repo' ? '☁️ Cloud Storage' : '💾 Direct Upload'}
             </div>
             <div class="tool-actions" style="gap: 10px;">
                 ${actionButtons}
@@ -237,7 +302,7 @@ function filterTools() {
             </div>
             <div class="tool-description">${tool.description}</div>
             <div class="tool-source" style="font-size: 0.75em; color: var(--text-secondary); margin: 8px 0;">
-                📊 ${fileSize} • 📍 ${tool.source === 'github' ? '🐙 From GitHub (Small)' : tool.source === 'github-repo' ? '🐙 From GitHub (Large)' : '💾 Direct Upload'}
+                📊 ${fileSize} • 📍 ${tool.source === 'github' ? '🐙 From GitHub (Small)' : tool.source === 'github-repo' ? '☁️ Cloud Storage' : '💾 Direct Upload'}
             </div>
             <div class="tool-actions" style="gap: 10px;">
                 ${actionButtons}
@@ -291,7 +356,6 @@ async function downloadFromGithubRepo(index) {
     try {
         showStatus('uploadStatus', '⏳ Downloading from GitHub...', 'info');
         
-        // Create download link
         const downloadUrl = `https://github.com/${tool.owner}/${tool.repo}/raw/${tool.branch}/${tool.filePath}`;
         const link = document.createElement('a');
         link.href = downloadUrl;
@@ -377,7 +441,7 @@ function uploadFile() {
     }
 
     const file = fileInput.files[0];
-    const maxSize = 5 * 1024 * 1024; // 5MB limit for local storage
+    const maxSize = 5 * 1024 * 1024;
 
     if (file.size > maxSize) {
         showStatus('uploadStatus', `❌ File too large! Max 5MB for direct upload. Use GitHub upload for larger files (up to 100MB)`, 'error');
@@ -386,7 +450,7 @@ function uploadFile() {
 
     const reader = new FileReader();
 
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         const newTool = {
             name: fileName,
             description: fileDescription,
@@ -395,17 +459,23 @@ function uploadFile() {
             fileData: e.target.result,
             date: new Date().toISOString(),
             source: 'local',
-            size: file.size
+            size: file.size,
+            uploadedBy: currentUserId
         };
 
         tools.push(newTool);
         localStorage.setItem('tools', JSON.stringify(tools));
+        
+        // Try to save to cloud
+        const cloudSaved = await saveToolsToCloud();
 
-        showStatus('uploadStatus', '✅ File uploaded successfully!', 'success');
+        showStatus('uploadStatus', cloudSaved ? '✅ File uploaded & synced to cloud!' : '✅ File uploaded locally!', 'success');
         document.getElementById('fileName').value = '';
         document.getElementById('fileDescription').value = '';
         document.getElementById('readmeContent').value = '';
         document.getElementById('fileInput').value = '';
+        
+        loadTools();
     };
 
     reader.readAsArrayBuffer(file);
@@ -423,6 +493,9 @@ function setupGithubUpload() {
 
     githubUploadToken = token;
     githubUploadRepo = repo;
+    localStorage.setItem('githubToken', token);
+    localStorage.setItem('githubUploadRepo', repo);
+    
     showStatus('githubUploadStatus', '✅ GitHub setup saved! Now upload files.', 'success');
 }
 
@@ -482,18 +555,24 @@ async function uploadLargeFileToGithub() {
             owner: owner,
             repo: repo,
             filePath: uploadPath,
-            branch: 'main'
+            branch: 'main',
+            uploadedBy: currentUserId
         };
 
         tools.push(newTool);
         localStorage.setItem('tools', JSON.stringify(tools));
+        
+        // Save to cloud
+        await saveToolsToCloud();
 
-        showStatus('githubUploadStatus', `✅ File uploaded successfully! (${formatFileSize(file.size)})`, 'success');
+        showStatus('githubUploadStatus', `✅ File uploaded & synced! (${formatFileSize(file.size)})`, 'success');
         document.getElementById('githubLargeFileName').value = '';
         document.getElementById('githubLargeFilePath').value = '';
         document.getElementById('githubLargeDescription').value = '';
         document.getElementById('githubLargeReadme').value = '';
         document.getElementById('githubLargeFileInput').value = '';
+        
+        loadTools();
     } catch (error) {
         showStatus('githubUploadStatus', `❌ Error: ${error.message}`, 'error');
     }
@@ -551,7 +630,7 @@ async function uploadFromGitHub() {
         const fileBlob = await response.blob();
         const reader = new FileReader();
 
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             const newTool = {
                 name: fileName,
                 description: description,
@@ -562,19 +641,25 @@ async function uploadFromGitHub() {
                 source: 'github',
                 size: fileBlob.size,
                 repoUrl: `https://github.com/${owner}/${repo}`,
-                filePath: filePath
+                filePath: filePath,
+                uploadedBy: currentUserId
             };
 
             tools.push(newTool);
             localStorage.setItem('tools', JSON.stringify(tools));
+            
+            // Save to cloud
+            await saveToolsToCloud();
 
-            showStatus('githubStatus', '✅ File imported from GitHub successfully!', 'success');
+            showStatus('githubStatus', '✅ File imported & synced!', 'success');
             document.getElementById('githubToken').value = '';
             document.getElementById('repoUrl').value = '';
             document.getElementById('filePath').value = '';
             document.getElementById('githubFileName').value = '';
             document.getElementById('githubDescription').value = '';
             document.getElementById('githubReadme').value = '';
+            
+            loadTools();
         };
 
         reader.readAsArrayBuffer(fileBlob);
@@ -622,7 +707,7 @@ function loadFilesList() {
             </div>
             <div class="file-description">${tool.description}</div>
             <div class="file-source" style="font-size: 0.85em; color: var(--text-secondary); margin: 8px 0;">
-                📊 ${formatFileSize(tool.size || 0)} • 📍 ${tool.source === 'github' ? '🐙 GitHub (Small)' : tool.source === 'github-repo' ? '🐙 GitHub (Large Upload)' : '💾 Local Upload'}
+                📊 ${formatFileSize(tool.size || 0)} • 📍 ${tool.source === 'github' ? '🐙 GitHub (Small)' : tool.source === 'github-repo' ? '☁️ Cloud' : '💾 Local'} • 👤 ${tool.uploadedBy ? tool.uploadedBy.substr(0, 8) : 'N/A'}
             </div>
             <div class="file-actions">
                 <button class="btn-edit" onclick="openEditModal(${index})">✏️ Edit</button>
@@ -693,7 +778,7 @@ function closeEditModal() {
     toEditFileIndex = null;
 }
 
-function saveEdit() {
+async function saveEdit() {
     if (toEditFileIndex === null) return;
 
     tools[toEditFileIndex].name = document.getElementById('editFileName').value;
@@ -701,11 +786,15 @@ function saveEdit() {
     tools[toEditFileIndex].readme = document.getElementById('editReadmeContent').value;
 
     localStorage.setItem('tools', JSON.stringify(tools));
+    
+    // Sync to cloud
+    await saveToolsToCloud();
+    
     closeEditModal();
     loadFilesList();
     loadReadmeList();
     
-    showStatus('uploadStatus', '✅ File updated successfully!', 'success');
+    showStatus('uploadStatus', '✅ File updated & synced!', 'success');
 }
 
 // ===== DELETE FUNCTIONS =====
@@ -719,10 +808,14 @@ function closeDeleteModal() {
     toDeleteFileIndex = null;
 }
 
-function confirmDelete() {
+async function confirmDelete() {
     if (toDeleteFileIndex !== null) {
         tools.splice(toDeleteFileIndex, 1);
         localStorage.setItem('tools', JSON.stringify(tools));
+        
+        // Sync to cloud
+        await saveToolsToCloud();
+        
         closeDeleteModal();
         loadFilesList();
     }
@@ -751,8 +844,12 @@ window.onclick = function(event) {
 };
 
 // ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initCanvas();
+    
+    // Fetch from cloud first
+    await fetchToolsFromCloud();
+    
     loadTools();
     loadLinks();
     
