@@ -5,27 +5,49 @@ let socialLinks = JSON.parse(localStorage.getItem('socialLinks')) || {
     discord: '#'
 };
 let toDeleteFileIndex = null;
+let toEditFileIndex = null;
+let updateCheckInterval = null;
 
-// ===== CANVAS ANIMATION (Solo Leveling Background) =====
+// ===== REAL-TIME UPDATE CHECK =====
+function startRealTimeUpdates() {
+    // Check for updates every 2 seconds
+    updateCheckInterval = setInterval(() => {
+        const latestTools = JSON.parse(localStorage.getItem('tools')) || [];
+        
+        // Check if data changed
+        if (JSON.stringify(latestTools) !== JSON.stringify(tools)) {
+            tools = latestTools;
+            loadTools();
+        }
+    }, 2000);
+}
+
+function stopRealTimeUpdates() {
+    if (updateCheckInterval) {
+        clearInterval(updateCheckInterval);
+    }
+}
+
+// ===== OPTIMIZED CANVAS ANIMATION =====
 function initCanvas() {
     const canvas = document.getElementById('canvas');
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     const particles = [];
-    const particleCount = 50;
+    const particleCount = 40; // Reduced for better performance
 
     class Particle {
         constructor() {
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
-            this.size = Math.random() * 2 + 1;
-            this.speedX = Math.random() * 0.5 - 0.25;
-            this.speedY = Math.random() * 0.5 - 0.25;
-            this.opacity = Math.random() * 0.5 + 0.2;
+            this.size = Math.random() * 1.5 + 0.5;
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.speedY = (Math.random() - 0.5) * 0.3;
+            this.opacity = Math.random() * 0.4 + 0.1;
         }
 
         update() {
@@ -50,6 +72,7 @@ function initCanvas() {
         particles.push(new Particle());
     }
 
+    let animationFrameId;
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -58,32 +81,41 @@ function initCanvas() {
             particle.draw();
         });
 
-        // Draw connections
-        for (let i = 0; i < particles.length; i++) {
-            for (let j = i + 1; j < particles.length; j++) {
-                const dx = particles[i].x - particles[j].x;
-                const dy = particles[i].y - particles[j].y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+        // Draw connections every other frame for performance
+        if (Math.random() > 0.5) {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
 
-                if (distance < 100) {
-                    ctx.strokeStyle = `rgba(111, 66, 193, ${0.3 * (1 - distance / 100)})`;
-                    ctx.lineWidth = 0.5;
-                    ctx.beginPath();
-                    ctx.moveTo(particles[i].x, particles[i].y);
-                    ctx.lineTo(particles[j].x, particles[j].y);
-                    ctx.stroke();
+                    if (distance < 120) {
+                        ctx.strokeStyle = `rgba(111, 66, 193, ${0.2 * (1 - distance / 120)})`;
+                        ctx.lineWidth = 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
                 }
             }
         }
 
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
     }
 
     animate();
-    window.addEventListener('resize', () => {
+
+    const handleResize = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-    });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+        cancelAnimationFrame(animationFrameId);
+        window.removeEventListener('resize', handleResize);
+    };
 }
 
 // ===== HOME PAGE FUNCTIONS =====
@@ -120,12 +152,16 @@ function loadTools() {
     tools.forEach((tool, index) => {
         const toolCard = document.createElement('div');
         toolCard.className = 'tool-card';
+        toolCard.style.animation = `slideInCard 0.4s ease-out ${index * 0.05}s both`;
         toolCard.innerHTML = `
             <div class="tool-header">
                 <div class="tool-name">📦 ${tool.name}</div>
                 <div class="tool-date">${new Date(tool.date).toLocaleDateString()}</div>
             </div>
             <div class="tool-description">${tool.description}</div>
+            <div class="tool-source" style="font-size: 0.75em; color: var(--text-secondary); margin: 8px 0;">
+                📍 ${tool.source === 'github' ? '🐙 From GitHub' : '💾 Direct Upload'}
+            </div>
             <div class="tool-actions">
                 <button class="tool-actions button btn-download" onclick="downloadFile(${index})">⬇️ Download</button>
                 <button class="tool-actions button btn-readme" onclick="viewReadme(${index})">📖 README</button>
@@ -149,7 +185,7 @@ function filterTools() {
     toolsGrid.innerHTML = '';
 
     if (filtered.length === 0) {
-        toolsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">No tools found</div>';
+        toolsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); animation: fadeIn 0.3s ease;">🔍 No tools found</div>';
         return;
     }
 
@@ -157,12 +193,16 @@ function filterTools() {
         const toolIndex = tools.indexOf(tool);
         const toolCard = document.createElement('div');
         toolCard.className = 'tool-card';
+        toolCard.style.animation = `slideInCard 0.3s ease-out ${index * 0.05}s both`;
         toolCard.innerHTML = `
             <div class="tool-header">
                 <div class="tool-name">📦 ${tool.name}</div>
                 <div class="tool-date">${new Date(tool.date).toLocaleDateString()}</div>
             </div>
             <div class="tool-description">${tool.description}</div>
+            <div class="tool-source" style="font-size: 0.75em; color: var(--text-secondary); margin: 8px 0;">
+                📍 ${tool.source === 'github' ? '🐙 From GitHub' : '💾 Direct Upload'}
+            </div>
             <div class="tool-actions">
                 <button class="tool-actions button btn-download" onclick="downloadFile(${toolIndex})">⬇️ Download</button>
                 <button class="tool-actions button btn-readme" onclick="viewReadme(${toolIndex})">📖 README</button>
@@ -191,7 +231,7 @@ function updateFilterButtons() {
 function downloadFile(index) {
     const tool = tools[index];
     if (!tool.fileData) {
-        alert('File data not available');
+        alert('❌ File data not available');
         return;
     }
     const link = document.createElement('a');
@@ -209,6 +249,7 @@ function viewReadme(index) {
     modalTitle.textContent = `📖 ${tool.name} - README`;
     modalBody.innerHTML = parseMarkdown(tool.readme || 'No README available');
     modal.style.display = 'block';
+    modal.style.animation = 'fadeIn 0.3s ease';
 }
 
 function closeReadmeModal() {
@@ -227,6 +268,7 @@ function parseMarkdown(md) {
 }
 
 function goHome() {
+    stopRealTimeUpdates();
     window.location.href = 'index.html';
 }
 
@@ -280,7 +322,8 @@ function uploadFile() {
             readme: readmeContent,
             filename: file.name,
             fileData: e.target.result,
-            date: new Date().toISOString()
+            date: new Date().toISOString(),
+            source: 'local'
         };
 
         tools.push(newTool);
@@ -296,13 +339,92 @@ function uploadFile() {
     reader.readAsArrayBuffer(file);
 }
 
+// ===== GITHUB UPLOAD FUNCTION =====
+async function uploadFromGitHub() {
+    const token = document.getElementById('githubToken').value;
+    const repoUrl = document.getElementById('repoUrl').value;
+    const filePath = document.getElementById('filePath').value;
+    const fileName = document.getElementById('githubFileName').value;
+    const description = document.getElementById('githubDescription').value;
+    const readme = document.getElementById('githubReadme').value;
+
+    if (!token || !repoUrl || !filePath || !fileName || !description || !readme) {
+        showStatus('githubStatus', '❌ Please fill all fields', 'error');
+        return;
+    }
+
+    try {
+        showStatus('githubStatus', '⏳ Downloading file from GitHub...', 'info');
+        
+        let owner, repo;
+        if (repoUrl.includes('github.com')) {
+            const parts = repoUrl.replace('https://github.com/', '').replace('http://github.com/', '').split('/');
+            owner = parts[0];
+            repo = parts[1].replace('.git', '');
+        } else {
+            const parts = repoUrl.split('/');
+            owner = parts[0];
+            repo = parts[1];
+        }
+
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3.raw'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`GitHub API Error: ${response.status} - File not found`);
+        }
+
+        const fileBlob = await response.blob();
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const newTool = {
+                name: fileName,
+                description: description,
+                readme: readme,
+                filename: filePath.split('/').pop(),
+                fileData: e.target.result,
+                date: new Date().toISOString(),
+                source: 'github',
+                repoUrl: `https://github.com/${owner}/${repo}`,
+                filePath: filePath
+            };
+
+            tools.push(newTool);
+            localStorage.setItem('tools', JSON.stringify(tools));
+
+            showStatus('githubStatus', '✅ File imported from GitHub successfully!', 'success');
+            document.getElementById('githubToken').value = '';
+            document.getElementById('repoUrl').value = '';
+            document.getElementById('filePath').value = '';
+            document.getElementById('githubFileName').value = '';
+            document.getElementById('githubDescription').value = '';
+            document.getElementById('githubReadme').value = '';
+        };
+
+        reader.readAsArrayBuffer(fileBlob);
+    } catch (error) {
+        showStatus('githubStatus', `❌ Error: ${error.message}`, 'error');
+    }
+}
+
 function showStatus(elementId, message, type) {
     const element = document.getElementById(elementId);
+    if (!element) return;
+    
     element.textContent = message;
     element.className = `status-message ${type}`;
-    setTimeout(() => {
-        element.className = 'status-message';
-    }, 4000);
+    
+    if (type !== 'info') {
+        setTimeout(() => {
+            element.className = 'status-message';
+        }, 4000);
+    }
 }
 
 function loadFilesList() {
@@ -322,13 +444,18 @@ function loadFilesList() {
     tools.forEach((tool, index) => {
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
+        fileItem.style.animation = `slideInCard 0.3s ease-out ${index * 0.05}s both`;
         fileItem.innerHTML = `
             <div class="file-header">
                 <div class="file-name">📦 ${tool.name}</div>
                 <div class="file-date">${new Date(tool.date).toLocaleDateString()}</div>
             </div>
             <div class="file-description">${tool.description}</div>
+            <div class="file-source" style="font-size: 0.85em; color: var(--text-secondary); margin: 8px 0;">
+                📍 Source: ${tool.source === 'github' ? '🐙 GitHub' : '💾 Local Upload'}
+            </div>
             <div class="file-actions">
+                <button class="btn-edit" onclick="openEditModal(${index})">✏️ Edit</button>
                 <button class="btn-del" onclick="openDeleteModal(${index})">🗑️ Delete</button>
             </div>
         `;
@@ -353,6 +480,7 @@ function loadReadmeList() {
     tools.forEach((tool, index) => {
         const readmeItem = document.createElement('div');
         readmeItem.className = 'readme-item';
+        readmeItem.style.animation = `slideInCard 0.3s ease-out ${index * 0.05}s both`;
         readmeItem.innerHTML = `
             <div class="file-header">
                 <div class="file-name">📝 ${tool.name}</div>
@@ -378,6 +506,39 @@ function updateLinks() {
     showStatus('linksStatus', '✅ Social links updated successfully!', 'success');
 }
 
+// ===== EDIT FUNCTIONS =====
+function openEditModal(index) {
+    toEditFileIndex = index;
+    const tool = tools[index];
+    
+    document.getElementById('editFileName').value = tool.name;
+    document.getElementById('editFileDescription').value = tool.description;
+    document.getElementById('editReadmeContent').value = tool.readme;
+    
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    toEditFileIndex = null;
+}
+
+function saveEdit() {
+    if (toEditFileIndex === null) return;
+
+    tools[toEditFileIndex].name = document.getElementById('editFileName').value;
+    tools[toEditFileIndex].description = document.getElementById('editFileDescription').value;
+    tools[toEditFileIndex].readme = document.getElementById('editReadmeContent').value;
+
+    localStorage.setItem('tools', JSON.stringify(tools));
+    closeEditModal();
+    loadFilesList();
+    loadReadmeList();
+    
+    showStatus('uploadStatus', '✅ File updated successfully!', 'success');
+}
+
+// ===== DELETE FUNCTIONS =====
 function openDeleteModal(index) {
     toDeleteFileIndex = index;
     document.getElementById('deleteModal').style.display = 'block';
@@ -406,12 +567,16 @@ function logout() {
 window.onclick = function(event) {
     const readmeModal = document.getElementById('readmeModal');
     const deleteModal = document.getElementById('deleteModal');
+    const editModal = document.getElementById('editModal');
 
     if (readmeModal && event.target === readmeModal) {
         readmeModal.style.display = 'none';
     }
     if (deleteModal && event.target === deleteModal) {
-        deleteModal.style.display = 'none';
+        closeDeleteModal();
+    }
+    if (editModal && event.target === editModal) {
+        closeEditModal();
     }
 };
 
@@ -420,4 +585,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initCanvas();
     loadTools();
     loadLinks();
+    
+    // Start real-time updates on user dashboard
+    if (document.getElementById('toolsGrid')) {
+        startRealTimeUpdates();
+    }
 });

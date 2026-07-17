@@ -26,6 +26,8 @@ body {
     background: linear-gradient(135deg, #0f0f1e 0%, #1a0033 100%);
     color: var(--text);
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* === BACKGROUND & ANIMATION === */
@@ -37,6 +39,7 @@ body {
     height: 100%;
     z-index: -1;
     overflow: hidden;
+    will-change: transform;
 }
 
 canvas {
@@ -54,13 +57,30 @@ canvas {
     background: radial-gradient(circle, rgba(111, 66, 193, 0.15) 0%, transparent 70%);
     border-radius: 50%;
     filter: blur(40px);
-    animation: float 6s ease-in-out infinite;
+    animation: float 8s ease-in-out infinite;
     transform: translate(-50%, -50%);
+    will-change: transform;
 }
 
 @keyframes float {
     0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-    50% { transform: translate(-50%, -50%) translateY(-30px); }
+    50% { transform: translate(-50%, -50%) translateY(-40px); }
+}
+
+@keyframes slideInCard {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* === COMMON COMPONENTS === */
@@ -81,14 +101,19 @@ canvas {
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     text-transform: uppercase;
     letter-spacing: 1px;
+    will-change: transform, box-shadow;
 }
 
 .btn:hover {
     transform: translateY(-2px);
     box-shadow: var(--glow);
+}
+
+.btn:active {
+    transform: translateY(0);
 }
 
 .btn-primary {
@@ -177,7 +202,6 @@ canvas {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 10px;
-    text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
 }
 
 .subtitle {
@@ -198,7 +222,7 @@ canvas {
     border-radius: 15px;
     padding: 30px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
@@ -255,7 +279,7 @@ canvas {
     border-radius: 8px;
     color: var(--text);
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 600;
 }
 
@@ -314,7 +338,7 @@ canvas {
     color: var(--text);
     font-size: 1.1em;
     margin-bottom: 15px;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-box:focus {
@@ -335,7 +359,7 @@ canvas {
     border-radius: 8px;
     color: var(--text);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 600;
 }
 
@@ -362,10 +386,11 @@ canvas {
     border: 2px solid rgba(111, 66, 193, 0.3);
     border-radius: 15px;
     padding: 25px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     overflow: hidden;
     position: relative;
+    will-change: transform, border-color, box-shadow;
 }
 
 .tool-card::before {
@@ -376,7 +401,7 @@ canvas {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
-    transition: right 0.5s ease;
+    transition: right 0.4s ease;
 }
 
 .tool-card:hover::before {
@@ -426,8 +451,9 @@ canvas {
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.9em;
+    will-change: transform, box-shadow;
 }
 
 .btn-download {
@@ -437,6 +463,7 @@ canvas {
 
 .btn-download:hover {
     background: linear-gradient(135deg, #00c853 0%, #00a040 100%);
+    transform: translateY(-2px);
 }
 
 .btn-readme {
@@ -446,6 +473,7 @@ canvas {
 
 .btn-readme:hover {
     background: linear-gradient(135deg, var(--primary-dark) 0%, #6f42c1 100%);
+    transform: translateY(-2px);
 }
 
 .empty-state {
@@ -471,11 +499,6 @@ canvas {
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(5px);
     animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
 }
 
 .modal-content {
@@ -525,7 +548,7 @@ canvas {
     color: var(--text);
     font-size: 2em;
     cursor: pointer;
-    transition: color 0.3s ease;
+    transition: color 0.25s ease;
 }
 
 .close-btn:hover {
@@ -608,7 +631,7 @@ canvas {
     border-radius: 8px;
     color: var(--text);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: left;
     font-weight: 600;
     font-size: 0.95em;
@@ -693,6 +716,11 @@ canvas {
     color: var(--text);
 }
 
+.form-group small {
+    display: block;
+    margin-top: 5px;
+}
+
 .form-input, .form-textarea {
     width: 100%;
     padding: 12px 15px;
@@ -701,7 +729,7 @@ canvas {
     border-radius: 8px;
     color: var(--text);
     font-size: 0.95em;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: inherit;
 }
 
@@ -722,6 +750,7 @@ canvas {
     text-align: center;
     font-weight: 600;
     display: none;
+    animation: slideInCard 0.3s ease;
 }
 
 .status-message.success {
@@ -738,6 +767,13 @@ canvas {
     display: block;
 }
 
+.status-message.info {
+    background: rgba(0, 212, 255, 0.2);
+    border: 2px solid var(--secondary);
+    color: var(--secondary);
+    display: block;
+}
+
 /* === FILE LIST === */
 .files-list, .readme-list {
     display: grid;
@@ -749,12 +785,14 @@ canvas {
     border: 2px solid rgba(111, 66, 193, 0.3);
     border-radius: 12px;
     padding: 20px;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, border-color, box-shadow;
 }
 
 .file-item:hover, .readme-item:hover {
     border-color: var(--secondary);
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .file-header {
@@ -781,6 +819,12 @@ canvas {
     line-height: 1.6;
 }
 
+.file-source {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin: 8px 0;
+}
+
 .file-actions {
     display: flex;
     gap: 10px;
@@ -793,7 +837,7 @@ canvas {
     cursor: pointer;
     font-weight: 600;
     font-size: 0.85em;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-edit {
@@ -803,6 +847,7 @@ canvas {
 
 .btn-edit:hover {
     background: linear-gradient(135deg, #ffb300 0%, #ffa000 100%);
+    transform: translateY(-2px);
 }
 
 .btn-del {
@@ -812,6 +857,7 @@ canvas {
 
 .btn-del:hover {
     background: linear-gradient(135deg, #ff5252 0%, #ff1744 100%);
+    transform: translateY(-2px);
 }
 
 /* === RESPONSIVE === */
