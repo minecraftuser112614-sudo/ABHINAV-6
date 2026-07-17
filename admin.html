@@ -20,6 +20,7 @@
             </div>
             <nav class="sidebar-nav">
                 <button class="nav-btn active" onclick="showSection('upload')">📤 Upload File</button>
+                <button class="nav-btn" onclick="showSection('github')">🐙 GitHub Upload</button>
                 <button class="nav-btn" onclick="showSection('files')">📁 Manage Files</button>
                 <button class="nav-btn" onclick="showSection('readme')">📝 README Files</button>
                 <button class="nav-btn" onclick="showSection('links')">🔗 Social Links</button>
@@ -60,6 +61,42 @@
                     <button class="btn btn-primary" onclick="uploadFile()">🚀 Upload File</button>
                 </div>
                 <div id="uploadStatus" class="status-message"></div>
+            </section>
+
+            <!-- GitHub Upload Section -->
+            <section id="githubSection" class="admin-section">
+                <div class="section-header">
+                    <h2>🐙 Import From GitHub</h2>
+                </div>
+                <div class="upload-form">
+                    <div class="form-group">
+                        <label for="githubToken">GitHub Token (PAT):</label>
+                        <input type="password" id="githubToken" placeholder="Your GitHub Personal Access Token" class="form-input">
+                        <small style="color: var(--text-secondary);">Create at: https://github.com/settings/tokens</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="repoUrl">Repository URL:</label>
+                        <input type="text" id="repoUrl" placeholder="e.g., owner/repo or https://github.com/owner/repo" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="filePath">File Path (from repo root):</label>
+                        <input type="text" id="filePath" placeholder="e.g., releases/my-tool.zip" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="githubFileName">File Name:</label>
+                        <input type="text" id="githubFileName" placeholder="How to name this file" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="githubDescription">Description:</label>
+                        <textarea id="githubDescription" placeholder="Describe this tool..." class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="githubReadme">README Content:</label>
+                        <textarea id="githubReadme" placeholder="Write README content (supports markdown)..." class="form-textarea" rows="6"></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="uploadFromGitHub()">🐙 Import from GitHub</button>
+                </div>
+                <div id="githubStatus" class="status-message"></div>
             </section>
 
             <!-- Manage Files Section -->
@@ -122,6 +159,34 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
                 <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>Edit File</h2>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editFileName">File Name:</label>
+                    <input type="text" id="editFileName" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="editFileDescription">Description:</label>
+                    <textarea id="editFileDescription" class="form-textarea" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editReadmeContent">README Content:</label>
+                    <textarea id="editReadmeContent" class="form-textarea" rows="6"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEdit()">✅ Save Changes</button>
             </div>
         </div>
     </div>
