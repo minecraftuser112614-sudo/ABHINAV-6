@@ -19,8 +19,9 @@
                 <h2>🛡️ ADMIN PANEL</h2>
             </div>
             <nav class="sidebar-nav">
-                <button class="nav-btn active" onclick="showSection('upload')">📤 Upload File</button>
-                <button class="nav-btn" onclick="showSection('github')">🐙 GitHub Upload</button>
+                <button class="nav-btn active" onclick="showSection('upload')">📤 Upload File (5MB)</button>
+                <button class="nav-btn" onclick="showSection('largefile')">📦 Large File (100MB+)</button>
+                <button class="nav-btn" onclick="showSection('github')">🐙 GitHub Import</button>
                 <button class="nav-btn" onclick="showSection('files')">📁 Manage Files</button>
                 <button class="nav-btn" onclick="showSection('readme')">📝 README Files</button>
                 <button class="nav-btn" onclick="showSection('links')">🔗 Social Links</button>
@@ -36,10 +37,10 @@
                 <p>Manage your tools and content</p>
             </header>
 
-            <!-- Upload Section -->
+            <!-- Upload Section (Local - 5MB) -->
             <section id="uploadSection" class="admin-section active">
                 <div class="section-header">
-                    <h2>📤 Upload New File</h2>
+                    <h2>📤 Upload File (Up to 5MB)</h2>
                 </div>
                 <div class="upload-form">
                     <div class="form-group">
@@ -51,8 +52,8 @@
                         <textarea id="fileDescription" placeholder="Describe this tool..." class="form-textarea" rows="3"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="fileInput">Select File:</label>
-                        <input type="file" id="fileInput" class="form-input" accept=".zip,.rar,.7z,.pdf,.doc,.docx,.txt,.exe">
+                        <label for="fileInput">Select File (Max 5MB):</label>
+                        <input type="file" id="fileInput" class="form-input" accept=".zip,.rar,.7z,.pdf,.doc,.docx,.txt,.exe,.mp4,.avi,.mov">
                     </div>
                     <div class="form-group">
                         <label for="readmeContent">README Content:</label>
@@ -63,134 +64,20 @@
                 <div id="uploadStatus" class="status-message"></div>
             </section>
 
-            <!-- GitHub Upload Section -->
-            <section id="githubSection" class="admin-section">
+            <!-- Large File Upload Section -->
+            <section id="largefileSection" class="admin-section">
                 <div class="section-header">
-                    <h2>🐙 Import From GitHub</h2>
+                    <h2>📦 Upload Large Files (Up to 100MB+)</h2>
                 </div>
+                
                 <div class="upload-form">
+                    <h3 style="color: var(--secondary); margin-bottom: 20px;">Step 1: Setup GitHub Upload</h3>
                     <div class="form-group">
-                        <label for="githubToken">GitHub Token (PAT):</label>
-                        <input type="password" id="githubToken" placeholder="Your GitHub Personal Access Token" class="form-input">
-                        <small style="color: var(--text-secondary);">Create at: https://github.com/settings/tokens</small>
+                        <label for="githubUploadToken">GitHub Personal Access Token (PAT):</label>
+                        <input type="password" id="githubUploadToken" placeholder="Your GitHub PAT token" class="form-input">
+                        <small style="color: var(--text-secondary);">📍 Create at: https://github.com/settings/tokens (Need: repo, workflow scopes)</small>
                     </div>
                     <div class="form-group">
-                        <label for="repoUrl">Repository URL:</label>
-                        <input type="text" id="repoUrl" placeholder="e.g., owner/repo or https://github.com/owner/repo" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="filePath">File Path (from repo root):</label>
-                        <input type="text" id="filePath" placeholder="e.g., releases/my-tool.zip" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="githubFileName">File Name:</label>
-                        <input type="text" id="githubFileName" placeholder="How to name this file" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="githubDescription">Description:</label>
-                        <textarea id="githubDescription" placeholder="Describe this tool..." class="form-textarea" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="githubReadme">README Content:</label>
-                        <textarea id="githubReadme" placeholder="Write README content (supports markdown)..." class="form-textarea" rows="6"></textarea>
-                    </div>
-                    <button class="btn btn-primary" onclick="uploadFromGitHub()">🐙 Import from GitHub</button>
-                </div>
-                <div id="githubStatus" class="status-message"></div>
-            </section>
-
-            <!-- Manage Files Section -->
-            <section id="filesSection" class="admin-section">
-                <div class="section-header">
-                    <h2>📁 Manage Uploaded Files</h2>
-                </div>
-                <div id="filesList" class="files-list">
-                    <!-- Files will be listed here -->
-                </div>
-                <div id="emptyFiles" class="empty-state">
-                    <p>No files uploaded yet</p>
-                </div>
-            </section>
-
-            <!-- README Section -->
-            <section id="readmeSection" class="admin-section">
-                <div class="section-header">
-                    <h2>📝 Manage README Files</h2>
-                </div>
-                <div id="readmeList" class="readme-list">
-                    <!-- README files will be listed here -->
-                </div>
-                <div id="emptyReadme" class="empty-state">
-                    <p>No README files yet</p>
-                </div>
-            </section>
-
-            <!-- Social Links Section -->
-            <section id="linksSection" class="admin-section">
-                <div class="section-header">
-                    <h2>🔗 Social Media Links</h2>
-                </div>
-                <div class="links-form">
-                    <div class="form-group">
-                        <label for="instagramLink">Instagram Link:</label>
-                        <input type="url" id="instagramLink" placeholder="https://instagram.com/..." class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="discordLink">Discord Link:</label>
-                        <input type="url" id="discordLink" placeholder="https://discord.gg/..." class="form-input">
-                    </div>
-                    <button class="btn btn-primary" onclick="updateLinks()">💾 Save Links</button>
-                </div>
-                <div id="linksStatus" class="status-message"></div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Confirm Delete</h2>
-                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this file? This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
-                <h2>Edit File</h2>
-                <button class="close-btn" onclick="closeEditModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="editFileName">File Name:</label>
-                    <input type="text" id="editFileName" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label for="editFileDescription">Description:</label>
-                    <textarea id="editFileDescription" class="form-textarea" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="editReadmeContent">README Content:</label>
-                    <textarea id="editReadmeContent" class="form-textarea" rows="6"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="saveEdit()">✅ Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+                        <label for="githubUploadRepo">Repository (owner/repo):</label>
+                        <input type="text" id="githubUploadRepo" placeholder="e.g., minecraftuser112614-sudo/ABHINAV-6" class="form-input">
+                        <small style="color: var(--text-secondary);">📍 Where to upload your files</small>\n                    </div>\n                    <button class="btn btn-primary" onclick="setupGithubUpload()" style="margin-bottom: 20px;">✅ Setup GitHub</button>\n                </div>\n                <div id=\"githubUploadStatus\" class=\"status-message\"></div>\n\n                <div class=\"upload-form\" style=\"margin-top: 30px; border-top: 2px solid rgba(111, 66, 193, 0.3); padding-top: 30px;\">\n                    <h3 style=\"color: var(--secondary); margin-bottom: 20px;\">Step 2: Upload Your Large File</h3>\n                    <div class=\"form-group\">\n                        <label for=\"githubLargeFileName\">Display Name:</label>\n                        <input type=\"text\" id=\"githubLargeFileName\" placeholder=\"How to show on dashboard\" class=\"form-input\">\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"githubLargeFilePath\">Folder Path (in repo):</label>\n                        <input type=\"text\" id=\"githubLargeFilePath\" placeholder=\"e.g., releases or releases/v1\" class=\"form-input\">\n                        <small style=\"color: var(--text-secondary);\">📁 Folder where file will be saved in your GitHub repo</small>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"githubLargeFileInput\">Select File (Any Size):</label>\n                        <input type=\"file\" id=\"githubLargeFileInput\" class=\"form-input\">\n                        <small style=\"color: var(--text-secondary);\">📌 Upload files up to 100MB+ to GitHub</small>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"githubLargeDescription\">Description:</label>\n                        <textarea id=\"githubLargeDescription\" placeholder=\"Describe this tool...\" class=\"form-textarea\" rows=\"3\"></textarea>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"githubLargeReadme\">README Content:</label>\n                        <textarea id=\"githubLargeReadme\" placeholder=\"Write README content (supports markdown)...\" class=\"form-textarea\" rows=\"6\"></textarea>\n                    </div>\n                    <button class=\"btn btn-primary\" onclick=\"uploadLargeFileToGithub()\">🐙 Upload to GitHub (100MB+)</button>\n                </div>\n            </section>\n\n            <!-- GitHub Import Section -->\n            <section id=\"githubSection\" class=\"admin-section\">\n                <div class=\"section-header\">\n                    <h2>🐙 Import From GitHub Repo</h2>\n                </div>\n                <div class=\"upload-form\">\n                    <p style=\"color: var(--text-secondary); margin-bottom: 20px;\">⚡ Quick way to import files from existing GitHub repositories</p>\n                    <div class=\"form-group\">\n                        <label for=\"githubToken\">GitHub Token (PAT):</label>\n                        <input type=\"password\" id=\"githubToken\" placeholder=\"Your GitHub Personal Access Token\" class=\"form-input\">\n                        <small style=\"color: var(--text-secondary);\">Create at: https://github.com/settings/tokens</small>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"repoUrl\">Repository URL:</label>\n                        <input type=\"text\" id=\"repoUrl\" placeholder=\"e.g., owner/repo or https://github.com/owner/repo\" class=\"form-input\">\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"filePath\">File Path (from repo root):</label>\n                        <input type=\"text\" id=\"filePath\" placeholder=\"e.g., releases/my-tool.zip\" class=\"form-input\">\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"githubFileName\">File Name:</label>\n                        <input type=\"text\" id=\"githubFileName\" placeholder=\"How to name this file\" class=\"form-input\">\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"githubDescription\">Description:</label>\n                        <textarea id=\"githubDescription\" placeholder=\"Describe this tool...\" class=\"form-textarea\" rows=\"3\"></textarea>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"githubReadme\">README Content:</label>\n                        <textarea id=\"githubReadme\" placeholder=\"Write README content (supports markdown)...\" class=\"form-textarea\" rows=\"6\"></textarea>\n                    </div>\n                    <button class=\"btn btn-primary\" onclick=\"uploadFromGitHub()\">📥 Import from GitHub</button>\n                </div>\n                <div id=\"githubStatus\" class=\"status-message\"></div>\n            </section>\n\n            <!-- Manage Files Section -->\n            <section id=\"filesSection\" class=\"admin-section\">\n                <div class=\"section-header\">\n                    <h2>📁 Manage All Files</h2>\n                </div>\n                <div id=\"filesList\" class=\"files-list\">\n                    <!-- Files will be listed here -->\n                </div>\n                <div id=\"emptyFiles\" class=\"empty-state\">\n                    <p>No files uploaded yet</p>\n                </div>\n            </section>\n\n            <!-- README Section -->\n            <section id=\"readmeSection\" class=\"admin-section\">\n                <div class=\"section-header\">\n                    <h2>📝 Manage README Files</h2>\n                </div>\n                <div id=\"readmeList\" class=\"readme-list\">\n                    <!-- README files will be listed here -->\n                </div>\n                <div id=\"emptyReadme\" class=\"empty-state\">\n                    <p>No README files yet</p>\n                </div>\n            </section>\n\n            <!-- Social Links Section -->\n            <section id=\"linksSection\" class=\"admin-section\">\n                <div class=\"section-header\">\n                    <h2>🔗 Social Media Links</h2>\n                </div>\n                <div class=\"links-form\">\n                    <div class=\"form-group\">\n                        <label for=\"instagramLink\">Instagram Link:</label>\n                        <input type=\"url\" id=\"instagramLink\" placeholder=\"https://instagram.com/...\" class=\"form-input\">\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"discordLink\">Discord Link:</label>\n                        <input type=\"url\" id=\"discordLink\" placeholder=\"https://discord.gg/...\" class=\"form-input\">\n                    </div>\n                    <button class=\"btn btn-primary\" onclick=\"updateLinks()\">💾 Save Links</button>\n                </div>\n                <div id=\"linksStatus\" class=\"status-message\"></div>\n            </section>\n        </main>\n    </div>\n\n    <!-- Delete Confirmation Modal -->\n    <div id=\"deleteModal\" class=\"modal\">\n        <div class=\"modal-content\">\n            <div class=\"modal-header\">\n                <h2>Confirm Delete</h2>\n                <button class=\"close-btn\" onclick=\"closeDeleteModal()\">&times;</button>\n            </div>\n            <div class=\"modal-body\">\n                <p>Are you sure you want to delete this file? This action cannot be undone.</p>\n            </div>\n            <div class=\"modal-footer\">\n                <button class=\"btn btn-secondary\" onclick=\"closeDeleteModal()\">Cancel</button>\n                <button class=\"btn btn-danger\" onclick=\"confirmDelete()\">Delete</button>\n            </div>\n        </div>\n    </div>\n\n    <!-- Edit Modal -->\n    <div id=\"editModal\" class=\"modal\">\n        <div class=\"modal-content\" style=\"max-width: 700px; max-height: 90vh; overflow-y: auto;\">\n            <div class=\"modal-header\">\n                <h2>Edit File</h2>\n                <button class=\"close-btn\" onclick=\"closeEditModal()\">&times;</button>\n            </div>\n            <div class=\"modal-body\">\n                <div class=\"form-group\">\n                    <label for=\"editFileName\">File Name:</label>\n                    <input type=\"text\" id=\"editFileName\" class=\"form-input\">\n                </div>\n                <div class=\"form-group\">\n                    <label for=\"editFileDescription\">Description:</label>\n                    <textarea id=\"editFileDescription\" class=\"form-textarea\" rows=\"3\"></textarea>\n                </div>\n                <div class=\"form-group\">\n                    <label for=\"editReadmeContent\">README Content:</label>\n                    <textarea id=\"editReadmeContent\" class=\"form-textarea\" rows=\"6\"></textarea>\n                </div>\n            </div>\n            <div class=\"modal-footer\">\n                <button class=\"btn btn-secondary\" onclick=\"closeEditModal()\">Cancel</button>\n                <button class=\"btn btn-primary\" onclick=\"saveEdit()\">✅ Save Changes</button>\n            </div>\n        </div>\n    </div>\n\n    <script src=\"script.js\"></script>\n</body>\n</html>
