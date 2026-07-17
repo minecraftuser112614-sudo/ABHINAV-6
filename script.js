@@ -7,14 +7,14 @@ let socialLinks = JSON.parse(localStorage.getItem('socialLinks')) || {
 let toDeleteFileIndex = null;
 let toEditFileIndex = null;
 let updateCheckInterval = null;
+let githubUploadToken = '';
+let githubUploadRepo = '';
 
 // ===== REAL-TIME UPDATE CHECK =====
 function startRealTimeUpdates() {
-    // Check for updates every 2 seconds
     updateCheckInterval = setInterval(() => {
         const latestTools = JSON.parse(localStorage.getItem('tools')) || [];
         
-        // Check if data changed
         if (JSON.stringify(latestTools) !== JSON.stringify(tools)) {
             tools = latestTools;
             loadTools();
@@ -38,7 +38,7 @@ function initCanvas() {
     canvas.height = window.innerHeight;
 
     const particles = [];
-    const particleCount = 40; // Reduced for better performance
+    const particleCount = 40;
 
     class Particle {
         constructor() {
@@ -81,7 +81,6 @@ function initCanvas() {
             particle.draw();
         });
 
-        // Draw connections every other frame for performance
         if (Math.random() > 0.5) {
             for (let i = 0; i < particles.length; i++) {
                 for (let j = i + 1; j < particles.length; j++) {
@@ -153,6 +152,21 @@ function loadTools() {
         const toolCard = document.createElement('div');
         toolCard.className = 'tool-card';
         toolCard.style.animation = `slideInCard 0.4s ease-out ${index * 0.05}s both`;
+        
+        const fileSize = tool.size ? formatFileSize(tool.size) : 'N/A';
+        
+        let actionButtons = `
+            <button class="tool-actions button btn-readme" onclick="viewReadme(${index})" style="flex: 1;">📖 README</button>
+        `;
+        
+        if (tool.source === 'github') {
+            actionButtons += `<button class="tool-actions button btn-download" onclick="downloadFromGithub(${index})" style="flex: 1;">⬇️ Download</button>`;
+        } else if (tool.source === 'local' && tool.fileData) {
+            actionButtons += `<button class="tool-actions button btn-download" onclick="downloadFile(${index})" style="flex: 1;">⬇️ Download</button>`;
+        } else if (tool.source === 'github-repo') {
+            actionButtons += `<button class="tool-actions button btn-download" onclick="downloadFromGithubRepo(${index})" style="flex: 1;">⬇️ Download</button>`;
+        }
+        
         toolCard.innerHTML = `
             <div class="tool-header">
                 <div class="tool-name">📦 ${tool.name}</div>
@@ -160,15 +174,22 @@ function loadTools() {
             </div>
             <div class="tool-description">${tool.description}</div>
             <div class="tool-source" style="font-size: 0.75em; color: var(--text-secondary); margin: 8px 0;">
-                📍 ${tool.source === 'github' ? '🐙 From GitHub' : '💾 Direct Upload'}
+                📊 ${fileSize} • 📍 ${tool.source === 'github' ? '🐙 From GitHub (Small)' : tool.source === 'github-repo' ? '🐙 From GitHub (Large)' : '💾 Direct Upload'}
             </div>
-            <div class="tool-actions">
-                <button class="tool-actions button btn-download" onclick="downloadFile(${index})">⬇️ Download</button>
-                <button class="tool-actions button btn-readme" onclick="viewReadme(${index})">📖 README</button>
+            <div class="tool-actions" style="gap: 10px;">
+                ${actionButtons}
             </div>
         `;
         toolsGrid.appendChild(toolCard);
     });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
 function filterTools() {
@@ -194,6 +215,21 @@ function filterTools() {
         const toolCard = document.createElement('div');
         toolCard.className = 'tool-card';
         toolCard.style.animation = `slideInCard 0.3s ease-out ${index * 0.05}s both`;
+        
+        const fileSize = tool.size ? formatFileSize(tool.size) : 'N/A';
+        
+        let actionButtons = `
+            <button class="tool-actions button btn-readme" onclick="viewReadme(${toolIndex})" style="flex: 1;">📖 README</button>
+        `;
+        
+        if (tool.source === 'github') {
+            actionButtons += `<button class="tool-actions button btn-download" onclick="downloadFromGithub(${toolIndex})" style="flex: 1;">⬇️ Download</button>`;
+        } else if (tool.source === 'local' && tool.fileData) {
+            actionButtons += `<button class="tool-actions button btn-download" onclick="downloadFile(${toolIndex})" style="flex: 1;">⬇️ Download</button>`;
+        } else if (tool.source === 'github-repo') {
+            actionButtons += `<button class="tool-actions button btn-download" onclick="downloadFromGithubRepo(${toolIndex})" style="flex: 1;">⬇️ Download</button>`;
+        }
+        
         toolCard.innerHTML = `
             <div class="tool-header">
                 <div class="tool-name">📦 ${tool.name}</div>
@@ -201,11 +237,10 @@ function filterTools() {
             </div>
             <div class="tool-description">${tool.description}</div>
             <div class="tool-source" style="font-size: 0.75em; color: var(--text-secondary); margin: 8px 0;">
-                📍 ${tool.source === 'github' ? '🐙 From GitHub' : '💾 Direct Upload'}
+                📊 ${fileSize} • 📍 ${tool.source === 'github' ? '🐙 From GitHub (Small)' : tool.source === 'github-repo' ? '🐙 From GitHub (Large)' : '💾 Direct Upload'}
             </div>
-            <div class="tool-actions">
-                <button class="tool-actions button btn-download" onclick="downloadFile(${toolIndex})">⬇️ Download</button>
-                <button class="tool-actions button btn-readme" onclick="viewReadme(${toolIndex})">📖 README</button>
+            <div class="tool-actions" style="gap: 10px;">
+                ${actionButtons}
             </div>
         `;
         toolsGrid.appendChild(toolCard);
@@ -238,6 +273,35 @@ function downloadFile(index) {
     link.href = tool.fileData;
     link.download = tool.filename || tool.name;
     link.click();
+}
+
+async function downloadFromGithub(index) {
+    const tool = tools[index];
+    try {
+        showStatus('uploadStatus', '⏳ Downloading from GitHub...', 'info');
+        window.open(tool.downloadUrl || tool.rawUrl, '_blank');
+        showStatus('uploadStatus', '✅ Download started!', 'success');
+    } catch (error) {
+        alert('❌ Error downloading file: ' + error.message);
+    }
+}
+
+async function downloadFromGithubRepo(index) {
+    const tool = tools[index];
+    try {
+        showStatus('uploadStatus', '⏳ Downloading from GitHub...', 'info');
+        
+        // Create download link
+        const downloadUrl = `https://github.com/${tool.owner}/${tool.repo}/raw/${tool.branch}/${tool.filePath}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = tool.filename || tool.name;
+        link.click();
+        
+        showStatus('uploadStatus', '✅ Download started!', 'success');
+    } catch (error) {
+        alert('❌ Error downloading file: ' + error.message);
+    }
 }
 
 function viewReadme(index) {
@@ -313,6 +377,13 @@ function uploadFile() {
     }
 
     const file = fileInput.files[0];
+    const maxSize = 5 * 1024 * 1024; // 5MB limit for local storage
+
+    if (file.size > maxSize) {
+        showStatus('uploadStatus', `❌ File too large! Max 5MB for direct upload. Use GitHub upload for larger files (up to 100MB)`, 'error');
+        return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = function(e) {
@@ -323,7 +394,8 @@ function uploadFile() {
             filename: file.name,
             fileData: e.target.result,
             date: new Date().toISOString(),
-            source: 'local'
+            source: 'local',
+            size: file.size
         };
 
         tools.push(newTool);
@@ -339,7 +411,104 @@ function uploadFile() {
     reader.readAsArrayBuffer(file);
 }
 
-// ===== GITHUB UPLOAD FUNCTION =====
+// ===== GITHUB LARGE FILE UPLOAD =====
+function setupGithubUpload() {
+    const token = document.getElementById('githubUploadToken').value;
+    const repo = document.getElementById('githubUploadRepo').value;
+
+    if (!token || !repo) {
+        showStatus('githubUploadStatus', '❌ Please enter GitHub Token and Repo (owner/repo)', 'error');
+        return;
+    }
+
+    githubUploadToken = token;
+    githubUploadRepo = repo;
+    showStatus('githubUploadStatus', '✅ GitHub setup saved! Now upload files.', 'success');
+}
+
+async function uploadLargeFileToGithub() {
+    if (!githubUploadToken || !githubUploadRepo) {
+        showStatus('githubUploadStatus', '❌ Please setup GitHub first', 'error');
+        return;
+    }
+
+    const fileName = document.getElementById('githubLargeFileName').value;
+    const filePath = document.getElementById('githubLargeFilePath').value;
+    const fileDescription = document.getElementById('githubLargeDescription').value;
+    const readme = document.getElementById('githubLargeReadme').value;
+    const fileInput = document.getElementById('githubLargeFileInput');
+
+    if (!fileName || !filePath || !fileDescription || !readme || !fileInput.files[0]) {
+        showStatus('githubUploadStatus', '❌ Please fill all fields and select a file', 'error');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    showStatus('githubUploadStatus', `⏳ Uploading ${file.name} (${formatFileSize(file.size)})...`, 'info');
+
+    try {
+        const fileContent = await fileToBase64(file);
+        const [owner, repo] = githubUploadRepo.split('/');
+
+        const uploadPath = `${filePath}/${file.name}`;
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${uploadPath}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${githubUploadToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Upload ${file.name}`,
+                content: fileContent.split(',')[1]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`GitHub API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        const newTool = {
+            name: fileName,
+            description: fileDescription,
+            readme: readme,
+            filename: file.name,
+            date: new Date().toISOString(),
+            source: 'github-repo',
+            size: file.size,
+            owner: owner,
+            repo: repo,
+            filePath: uploadPath,
+            branch: 'main'
+        };
+
+        tools.push(newTool);
+        localStorage.setItem('tools', JSON.stringify(tools));
+
+        showStatus('githubUploadStatus', `✅ File uploaded successfully! (${formatFileSize(file.size)})`, 'success');
+        document.getElementById('githubLargeFileName').value = '';
+        document.getElementById('githubLargeFilePath').value = '';
+        document.getElementById('githubLargeDescription').value = '';
+        document.getElementById('githubLargeReadme').value = '';
+        document.getElementById('githubLargeFileInput').value = '';
+    } catch (error) {
+        showStatus('githubUploadStatus', `❌ Error: ${error.message}`, 'error');
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ===== GITHUB SMALL FILE IMPORT =====
 async function uploadFromGitHub() {
     const token = document.getElementById('githubToken').value;
     const repoUrl = document.getElementById('repoUrl').value;
@@ -391,6 +560,7 @@ async function uploadFromGitHub() {
                 fileData: e.target.result,
                 date: new Date().toISOString(),
                 source: 'github',
+                size: fileBlob.size,
                 repoUrl: `https://github.com/${owner}/${repo}`,
                 filePath: filePath
             };
@@ -452,7 +622,7 @@ function loadFilesList() {
             </div>
             <div class="file-description">${tool.description}</div>
             <div class="file-source" style="font-size: 0.85em; color: var(--text-secondary); margin: 8px 0;">
-                📍 Source: ${tool.source === 'github' ? '🐙 GitHub' : '💾 Local Upload'}
+                📊 ${formatFileSize(tool.size || 0)} • 📍 ${tool.source === 'github' ? '🐙 GitHub (Small)' : tool.source === 'github-repo' ? '🐙 GitHub (Large Upload)' : '💾 Local Upload'}
             </div>
             <div class="file-actions">
                 <button class="btn-edit" onclick="openEditModal(${index})">✏️ Edit</button>
@@ -586,7 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTools();
     loadLinks();
     
-    // Start real-time updates on user dashboard
     if (document.getElementById('toolsGrid')) {
         startRealTimeUpdates();
     }
