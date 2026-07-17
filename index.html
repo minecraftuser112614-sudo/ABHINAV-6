@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABHINAV TOOLS AND BOTS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Animated Solo Leveling Background -->
+    <div class="background-container">
+        <canvas id="canvas"></canvas>
+        <div class="glow-effect"></div>
+    </div>
+
+    <div class="container">
+        <div class="welcome-card">
+            <div class="logo-section">
+                <h1 class="title">⚔️ ABHINAV TOOLS AND BOTS</h1>
+                <p class="subtitle">Explore, Download & Manage Your Tools</p>
+            </div>
+
+            <div class="options-container">
+                <div class="option-card user-card" onclick="goToUser()">
+                    <div class="option-icon">👥</div>
+                    <h2>Enter as User</h2>
+                    <p>Browse and download tools, view README files, and explore what's available</p>
+                    <button class="btn btn-user">Enter Public Dashboard</button>
+                </div>
+
+                <div class="option-card admin-card" onclick="promptAdminPassword()">
+                    <div class="option-icon">🛡️</div>
+                    <h2>Admin Panel</h2>
+                    <p>Upload files, manage content, and control the dashboard</p>
+                    <button class="btn btn-admin">Access Admin Panel</button>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="#" class="social-link instagram" title="Instagram">📸 Instagram</a>
+                <a href="#" class="social-link discord" title="Discord">💬 Discord</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

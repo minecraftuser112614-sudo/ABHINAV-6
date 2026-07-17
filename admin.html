@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ABHINAV TOOLS AND BOTS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Animated Solo Leveling Background -->
+    <div class="background-container">
+        <canvas id="canvas"></canvas>
+        <div class="glow-effect"></div>
+    </div>
+
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>🛡️ ADMIN PANEL</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" onclick="showSection('upload')">📤 Upload File</button>
+                <button class="nav-btn" onclick="showSection('files')">📁 Manage Files</button>
+                <button class="nav-btn" onclick="showSection('readme')">📝 README Files</button>
+                <button class="nav-btn" onclick="showSection('links')">🔗 Social Links</button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Welcome, Admin! 🎯</h1>
+                <p>Manage your tools and content</p>
+            </header>
+
+            <!-- Upload Section -->
+            <section id="uploadSection" class="admin-section active">
+                <div class="section-header">
+                    <h2>📤 Upload New File</h2>
+                </div>
+                <div class="upload-form">
+                    <div class="form-group">
+                        <label for="fileName">File Name:</label>
+                        <input type="text" id="fileName" placeholder="Enter file name" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="fileDescription">Description:</label>
+                        <textarea id="fileDescription" placeholder="Describe this tool..." class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileInput">Select File:</label>
+                        <input type="file" id="fileInput" class="form-input" accept=".zip,.rar,.7z,.pdf,.doc,.docx,.txt,.exe">
+                    </div>
+                    <div class="form-group">
+                        <label for="readmeContent">README Content:</label>
+                        <textarea id="readmeContent" placeholder="Write README content (supports markdown)..." class="form-textarea" rows="6"></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="uploadFile()">🚀 Upload File</button>
+                </div>
+                <div id="uploadStatus" class="status-message"></div>
+            </section>
+
+            <!-- Manage Files Section -->
+            <section id="filesSection" class="admin-section">
+                <div class="section-header">
+                    <h2>📁 Manage Uploaded Files</h2>
+                </div>
+                <div id="filesList" class="files-list">
+                    <!-- Files will be listed here -->
+                </div>
+                <div id="emptyFiles" class="empty-state">
+                    <p>No files uploaded yet</p>
+                </div>
+            </section>
+
+            <!-- README Section -->
+            <section id="readmeSection" class="admin-section">
+                <div class="section-header">
+                    <h2>📝 Manage README Files</h2>
+                </div>
+                <div id="readmeList" class="readme-list">
+                    <!-- README files will be listed here -->
+                </div>
+                <div id="emptyReadme" class="empty-state">
+                    <p>No README files yet</p>
+                </div>
+            </section>
+
+            <!-- Social Links Section -->
+            <section id="linksSection" class="admin-section">
+                <div class="section-header">
+                    <h2>🔗 Social Media Links</h2>
+                </div>
+                <div class="links-form">
+                    <div class="form-group">
+                        <label for="instagramLink">Instagram Link:</label>
+                        <input type="url" id="instagramLink" placeholder="https://instagram.com/..." class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="discordLink">Discord Link:</label>
+                        <input type="url" id="discordLink" placeholder="https://discord.gg/..." class="form-input">
+                    </div>
+                    <button class="btn btn-primary" onclick="updateLinks()">💾 Save Links</button>
+                </div>
+                <div id="linksStatus" class="status-message"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this file? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
